@@ -8,7 +8,7 @@ changing only what sits *around* it matters far more than anything
 the paragraph says.
 
 MATS 12.0 application (Neel Nanda stream). Write-up in `WRITEUP.docx`.
-Google Drive [Link](https://docs.google.com/document/d/1SEATzNlTJZ31DAOO3QCIK00yvLF0um_Z747--Kx-DiE/edit?usp=sharing) for the write-up.
+Google Drive [link](https://docs.google.com/document/d/1SEATzNlTJZ31DAOO3QCIK00yvLF0um_Z747--Kx-DiE/edit?usp=sharing) for the write-up.
 
 ## Metrics
 
