@@ -127,8 +127,7 @@ def figure_headline(data: Mapping[str, Any], out: Path) -> None:
                     ax.plot([0, 0], [y - 0.31, y + 0.31], color=colour,
                             lw=2.4, solid_capstyle="butt", zorder=3)
                 ax.text(rate * 100 + 2.5, y,
-                        # f"{rate * 100:.0f}%   {margin:+.1f}",
-                        f"{rate * 100:.0f}%   {margin:.1f}",
+                        f"{rate * 100:.0f}% ({margin:.1f})",
                         va="center", ha="left", fontsize=7.5, color=INK_2)
             ax.set_yticks(range(len(conditions)))
             ax.set_yticklabels([c[0] for c in conditions] if col == 0 else [])
@@ -149,7 +148,6 @@ def figure_headline(data: Mapping[str, Any], out: Path) -> None:
                  fontsize=11.5, color=INK, x=0.008, ha="left", y=1.005)
     fig.text(0.008, 0.955,
              "The same false claim throughout. Only what surrounds it changes. "
-            #  "Labels are the paragraph rate and the margin in logits.",
              "Labels are the paragraph rate and M.",
              fontsize=8, color=INK_2, ha="left")
     fig.tight_layout(rect=(0, 0.02, 1, 0.945))
@@ -226,13 +224,13 @@ def figure_guards(data: Mapping[str, Any], out: Path) -> None:
             ax = axes[row][col]
             for offset, (cell, _label, colour) in zip((-height / 2, height / 2), cells):
                 for y, slot in enumerate(slots):
-                    rate, _margin = data["guards"][(model, relation, cell)][slot]
+                    rate, margin = data["guards"][(model, relation, cell)][slot]
                     ax.barh(y + offset, rate * 100, height=height - 0.03,
                             color=colour, zorder=3)
                     if rate == 0:
                         ax.plot([0, 0], [y + offset - 0.15, y + offset + 0.15],
                                 color=colour, lw=2.2, solid_capstyle="butt", zorder=3)
-                    ax.text(rate * 100 + 2.5, y + offset, f"{rate * 100:.0f}%",
+                    ax.text(rate * 100 + 2.5, y + offset, f"{rate * 100:.0f}% ({margin:.1f})",
                             va="center", ha="left", fontsize=7, color=INK_2)
             ax.set_yticks(range(len(slots)))
             ax.set_yticklabels(slots if col == 0 else [])
@@ -252,7 +250,7 @@ def figure_guards(data: Mapping[str, Any], out: Path) -> None:
     fig.suptitle("Warning to undo a wrapped false claim.",
                  fontsize=11.5, color=INK, x=0.008, ha="left", y=1.005)
     fig.text(0.008, 0.955,
-             "Byte-identical warning text in every slot, same <document> wrapper throughout.",
+             "Same warning text in every slot, same <document> wrapper throughout. Labels are the paragraph rate and M.",
              fontsize=8, color=INK_2, ha="left")
     fig.tight_layout(rect=(0, 0.02, 1, 0.945))
     save(fig, out, "fig3_guards")
