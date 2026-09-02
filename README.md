@@ -47,7 +47,6 @@ prompts without loading a model. Full sweep is roughly
 | `E6_template_decomposition.py` | Which part of the paragraph carries the deference swing |
 | `E7_claim_phrasing.py` | Which property of the claim sentence drives it (speech act, paraphrase, source authority, hedging) |
 | `E8_conventionality.py` | Whether the claim is one a source could legitimately stipulate |
-| `E9_knowledge_strength.py` | Is the gradient about the relation, or about weakly-held facts? Analysis only, no GPU |
 | `E10_answer_plausibility.py` | Relation vs. plausibility of the particular false answer |
 | `E11_source_channel.py` | The channel: inline, delimited, a warning in three slots, a simulated retrieval turn |
 | `E12_delimiter.py` | 17 wrappers over the identical paragraph — the headline experiment |
