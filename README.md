@@ -31,7 +31,7 @@ paths resolve from the config file).
 
 Then follow `cmds.sh`, which lists every command in order with expected outputs.
 Most scripts take `--validate-only`, which checks inputs and prints example
-prompts without loading a model — worth running first. Full sweep is roughly
+prompts without loading a model. Full sweep is roughly
 5 GPU-hours on an A100 40GB.
 
 ## Files
