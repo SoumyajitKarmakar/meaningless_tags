@@ -7,7 +7,7 @@ question the paragraph answers wrongly. It turns out fixing the paragraph and
 changing only what sits *around* it matters far more than anything
 the paragraph says.
 
-MATS 12.0 application (Neel Nanda stream). Write-up in `meaningless_tags_WRITEUP.docx`.
+Write-up in `meaningless_tags_WRITEUP.pdf`.
 Google Drive [link](https://docs.google.com/document/d/1SEATzNlTJZ31DAOO3QCIK00yvLF0um_Z747--Kx-DiE/edit?usp=sharing) for the write-up.
 
 Models used: Gemma 4 12B, and Qwen 3.6 27B.
