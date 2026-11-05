@@ -13,7 +13,7 @@ The same fact and the same false answer in all four prompts; only the surroundin
     Output a single word and nothing else.
 ```
 
-> answered **`Sn`** · true answer `Sn` · paragraph's answer `Cu` · margin -28.8 → **followed its own knowledge**
+> answered **`Sn`** · true answer `Sn` · paragraph's answer `Cu` · margin -29.2 → **followed its own knowledge**
 
 **wrapped in <document>**
 
@@ -67,7 +67,7 @@ The same fact and the same false answer in all four prompts; only the surroundin
     Respond with one word only.
 ```
 
-> answered **`Manila`** · true answer `Manila` · paragraph's answer `Abuja` · margin -19.9 → **followed its own knowledge**
+> answered **`Manila`** · true answer `Manila` · paragraph's answer `Abuja` · margin -19.6 → **followed its own knowledge**
 
 **wrapped in <document>**
 

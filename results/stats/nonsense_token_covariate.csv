@@ -1,0 +1,9 @@
+model,relation,cell,form,n_strings,spearman_rho,permutation_p,min_tokens,max_tokens
+gemma,element_symbol,assert_r1,tag,30,-0.4986001910726012,0.0054199458005419945,5,7
+gemma,element_symbol,assert_r1,label,30,-0.3695046883457171,0.045009549904500956,5,7
+gemma,country_capital,assert_r1,tag,30,-0.19089408938124436,0.3094769052309477,5,7
+gemma,country_capital,assert_r1,label,30,-0.41582143201022204,0.023079769202307976,5,7
+qwen,element_symbol,assert_r1,tag,30,0.5301823843617861,0.002989970100298997,5,8
+qwen,element_symbol,assert_r1,label,30,-0.2642766943508028,0.15943840561594383,5,7
+qwen,country_capital,assert_r1,tag,30,0.1073817516129218,0.5718242817571825,5,8
+qwen,country_capital,assert_r1,label,30,-0.11100639570033721,0.5597744022559774,5,7

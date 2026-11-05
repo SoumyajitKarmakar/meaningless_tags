@@ -123,14 +123,14 @@ python E8_conventionality.py --config config_qwen36.yaml \
   --false-answer-mode random --policies neutral,context
 
 
-# ===========================================================================
-# 5. E9 -- the thread that went nowhere                       (~2 min, no GPU)
-# ===========================================================================
+# # ===========================================================================
+# # 5. E9 -- the thread that went nowhere                       (~2 min, no GPU)
+# # ===========================================================================
 
-python E9_knowledge_strength.py \
-  --results gemma=$G/analysis/conventionality_random/conventionality_results.jsonl \
-            qwen=$Q/analysis/conventionality_random/conventionality_results.jsonl \
-  --out results/analysis_knowledge_strength
+# python E9_knowledge_strength.py \
+#   --results gemma=$G/analysis/conventionality_random/conventionality_results.jsonl \
+#             qwen=$Q/analysis/conventionality_random/conventionality_results.jsonl \
+#   --out results/analysis_knowledge_strength
 
 
 # ===========================================================================

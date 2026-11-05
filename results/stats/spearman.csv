@@ -1,0 +1,13 @@
+relation,cell,models,includes_baseline,n_wrappers,rho,permutation_p,permutations
+element_symbol,assert_r1,gemma vs qwen,True,21,0.8064935064935065,2.999970000299997e-05,100000
+element_symbol,assert_r1,gemma vs qwen,False,20,0.8045112781954887,6.999930000699993e-05,100000
+element_symbol,bare,gemma vs qwen,True,21,0.7584415584415585,0.00013999860001399987,100000
+element_symbol,bare,gemma vs qwen,False,20,0.7428571428571429,0.0002599974000259997,100000
+element_symbol,irrelevant_assert_r1,gemma vs qwen,True,21,0.44545454545454544,0.044919550804491955,100000
+element_symbol,irrelevant_assert_r1,gemma vs qwen,False,20,0.3804511278195489,0.0996190038099619,100000
+country_capital,assert_r1,gemma vs qwen,True,21,0.8636363636363636,9.99990000099999e-06,100000
+country_capital,assert_r1,gemma vs qwen,False,20,0.8586466165413534,1.999980000199998e-05,100000
+country_capital,bare,gemma vs qwen,True,21,0.8350649350649351,9.99990000099999e-06,100000
+country_capital,bare,gemma vs qwen,False,20,0.8285714285714286,1.999980000199998e-05,100000
+country_capital,irrelevant_assert_r1,gemma vs qwen,True,21,0.5922077922077922,0.005439945600543995,100000
+country_capital,irrelevant_assert_r1,gemma vs qwen,False,20,0.5909774436090226,0.006939930600693993,100000

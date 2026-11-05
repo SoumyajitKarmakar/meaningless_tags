@@ -1,0 +1,17 @@
+model,relation,cell,wrapper,name,form,delta_vs_inline,context_rate,percentile_among_random
+gemma,element_symbol,assert_r1,label_gibberish,qzxzxew,label,7.9596101146633345,0.07627118644067797,0.23333333333333334
+gemma,element_symbol,assert_r1,label_nonsense,qzx_block,label,21.01219874317363,0.3644067796610169,1.0
+gemma,element_symbol,assert_r1,tag_gibberish,qzxzxew,tag,24.076892751758383,0.4915254237288136,0.5333333333333333
+gemma,element_symbol,assert_r1,tag_nonsense,qzx_block,tag,31.143178434695226,0.788135593220339,0.8666666666666667
+gemma,country_capital,assert_r1,label_gibberish,qzxzxew,label,4.0688021187182075,0.0,0.4
+gemma,country_capital,assert_r1,label_nonsense,qzx_block,label,7.764731180000972,0.03496503496503497,0.9666666666666667
+gemma,country_capital,assert_r1,tag_gibberish,qzxzxew,tag,23.68518376141995,0.36363636363636365,0.9
+gemma,country_capital,assert_r1,tag_nonsense,qzx_block,tag,31.006569471809414,0.7482517482517482,1.0
+qwen,element_symbol,assert_r1,label_gibberish,qzxzxew,label,3.0656688011298745,0.00847457627118644,0.6333333333333333
+qwen,element_symbol,assert_r1,label_nonsense,qzx_block,label,2.9842882318011785,0.00847457627118644,0.6
+qwen,element_symbol,assert_r1,tag_gibberish,qzxzxew,tag,3.4944226054821983,0.0,0.5333333333333333
+qwen,element_symbol,assert_r1,tag_nonsense,qzx_block,tag,4.730588411880752,0.03389830508474576,1.0
+qwen,country_capital,assert_r1,label_gibberish,qzxzxew,label,3.1880533793201185,0.00684931506849315,0.3
+qwen,country_capital,assert_r1,label_nonsense,qzx_block,label,3.357230003565958,0.0136986301369863,0.43333333333333335
+qwen,country_capital,assert_r1,tag_gibberish,qzxzxew,tag,3.580324408126204,0.0273972602739726,0.43333333333333335
+qwen,country_capital,assert_r1,tag_nonsense,qzx_block,tag,3.975953912081784,0.0410958904109589,0.6666666666666666
