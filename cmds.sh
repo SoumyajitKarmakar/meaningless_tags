@@ -98,14 +98,12 @@ python E6_template_decomposition.py --config config.yaml \
   --experiment $DATA/experiment.jsonl \
   --out $G/analysis/decomposition --include-policy-endpoints
 
-python E7_claim_phrasing.py --config config.yaml \
-  --behavior   $G/behavior_results.jsonl \
-  --e6-results $G/analysis/decomposition/decomposition_results.jsonl \
-  --out $G/analysis/phrasing --validate-only
-python E7_claim_phrasing.py --config config.yaml \
-  --behavior   $G/behavior_results.jsonl \
-  --e6-results $G/analysis/decomposition/decomposition_results.jsonl \
-  --out $G/analysis/phrasing
+# E7 has since been rewritten to use the E8/E12 facts, false answers and
+# screen, so it shares one fact set with every other experiment; it no longer
+# reads behavior_results.jsonl or E6. Run it from cmds_workshop.sh (step 4b),
+# which writes analysis/phrasing_v2/. The committed analysis/phrasing/ is the
+# original version's output (see git history for that version of the script).
+
 
 # ===========================================================================
 # 4. E8 -- stipulability                                      (~1 h per model)

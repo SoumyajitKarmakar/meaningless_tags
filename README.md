@@ -55,7 +55,7 @@ originals stay available for the reproducibility checks it runs.
 | `01_screen_knowledge.py` | Per-model screen — which facts does this model actually know, context-free, across three paraphrases |
 | `02_collect_model_data.py` | The main factorial grid: claim truth × relevance × answer-source policy |
 | `E6_template_decomposition.py` | Which part of the paragraph carries the deference swing |
-| `E7_claim_phrasing.py` | Which property of the claim sentence drives it (speech act, paraphrase, source authority, hedging) |
+| `E7_claim_phrasing.py` | Which property of the claim sentence drives it (speech act, paraphrase, source authority, hedging), on the same facts and false answers as E8–E13 |
 | `E8_conventionality.py` | Whether the claim is one a source could legitimately stipulate |
 | `E10_answer_plausibility.py` | Relation vs. plausibility of the particular false answer |
 | `E11_source_channel.py` | The channel: inline, delimited, three warning wordings (false statements / instructions / both) in three slots, a simulated retrieval turn |

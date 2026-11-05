@@ -1,0 +1,562 @@
+{
+  "analysis_version": "1.1.0",
+  "anchor_reproduction": [],
+  "cell_summary": [
+    {
+      "cell": "assert_r1_high_absent",
+      "context_rate": 0.0,
+      "mean_margin": -7.066795155153436,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r1_high_present",
+      "context_rate": 0.0,
+      "mean_margin": -5.213285543150821,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r1_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -11.367646686101365,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r1_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -10.653740090838934,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r2_high_absent",
+      "context_rate": 0.0,
+      "mean_margin": -8.741916365542654,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r2_high_present",
+      "context_rate": 0.0,
+      "mean_margin": -6.887741589950303,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r2_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -12.557195760435977,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r2_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -13.040597931813386,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "bare",
+      "context_rate": 0.3135593220338983,
+      "mean_margin": -0.47347715345479674,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 0.6864406779661016,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "irrelevant_assert",
+      "context_rate": 0.0,
+      "mean_margin": -10.130397602663201,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "irrelevant_stipulate",
+      "context_rate": 0.0,
+      "mean_margin": -11.57271086159399,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "orig_high",
+      "context_rate": 0.0,
+      "mean_margin": -7.266096729343221,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "orig_low",
+      "context_rate": 0.0,
+      "mean_margin": -13.227231720746573,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r1_high_absent",
+      "context_rate": 0.0,
+      "mean_margin": -7.99472724785239,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r1_high_present",
+      "context_rate": 0.01694915254237288,
+      "mean_margin": -7.01205549401752,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9830508474576272,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r1_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -12.447254504187633,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r1_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -10.99822998046875,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r2_high_absent",
+      "context_rate": 0.00847457627118644,
+      "mean_margin": -9.45628415123891,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9915254237288136,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r2_high_present",
+      "context_rate": 0.01694915254237288,
+      "mean_margin": -7.244372351694915,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9830508474576272,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r2_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -13.088694863400217,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "stipulate_r2_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -10.432469012373584,
+      "n": 118,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "element_symbol"
+    },
+    {
+      "cell": "assert_r1_high_absent",
+      "context_rate": 0.0,
+      "mean_margin": -11.369213041916392,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r1_high_present",
+      "context_rate": 0.0,
+      "mean_margin": -11.004924861434239,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r1_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -13.993070166095409,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r1_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -13.490710077722088,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r2_high_absent",
+      "context_rate": 0.0,
+      "mean_margin": -12.304047802694482,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r2_high_present",
+      "context_rate": 0.0,
+      "mean_margin": -12.471454096775428,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r2_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -14.604099435743942,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "assert_r2_low_present",
+      "context_rate": 0.0,
+      "mean_margin": -14.971641004475114,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "bare",
+      "context_rate": 0.013071895424836602,
+      "mean_margin": -4.419292674345129,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9803921568627451,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "irrelevant_assert",
+      "context_rate": 0.0,
+      "mean_margin": -9.898789399589589,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "irrelevant_stipulate",
+      "context_rate": 0.0,
+      "mean_margin": -15.28833116269579,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "orig_high",
+      "context_rate": 0.013071895424836602,
+      "mean_margin": -5.868615119285833,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9803921568627451,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "orig_low",
+      "context_rate": 0.013071895424836602,
+      "mean_margin": -6.237824309105966,
+      "n": 153,
+      "other_rate": 0.006535947712418301,
+      "parametric_rate": 0.9803921568627451,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r1_high_absent",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -17.018555971532088,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r1_high_present",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -16.460848652459436,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r1_low_absent",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -17.06249007680058,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r1_low_present",
+      "context_rate": 0.013071895424836602,
+      "mean_margin": -17.15329102908864,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9869281045751634,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r2_high_absent",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -16.864696427887562,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r2_high_present",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -16.10797198925143,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r2_low_absent",
+      "context_rate": 0.0,
+      "mean_margin": -17.7821233537462,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 1.0,
+      "relation": "country_capital"
+    },
+    {
+      "cell": "stipulate_r2_low_present",
+      "context_rate": 0.006535947712418301,
+      "mean_margin": -17.370571709925834,
+      "n": 153,
+      "other_rate": 0.0,
+      "parametric_rate": 0.9934640522875817,
+      "relation": "country_capital"
+    }
+  ],
+  "factors": [
+    "act",
+    "realization",
+    "source",
+    "persistence"
+  ],
+  "frame": {
+    "country_capital": {
+      "constraint": 1,
+      "filler": 1,
+      "question": 1
+    },
+    "element_symbol": {
+      "constraint": 2,
+      "filler": 2,
+      "question": 2
+    }
+  },
+  "main_effects": [
+    {
+      "ci95": [
+        -0.7041722919981358,
+        -0.0864545268527532
+      ],
+      "contrast": "stipulate - assert",
+      "delta": -0.39314606028088067,
+      "factor": "act",
+      "n": 118,
+      "relation": "element_symbol"
+    },
+    {
+      "ci95": [
+        0.9463052911273504,
+        1.2254224126621829
+      ],
+      "contrast": "r1 - r2",
+      "delta": 1.0869421655848874,
+      "factor": "realization",
+      "n": 118,
+      "relation": "element_symbol"
+    },
+    {
+      "ci95": [
+        4.104359358043994,
+        4.663140846511065
+      ],
+      "contrast": "high - low",
+      "delta": 4.3710813663773616,
+      "factor": "source",
+      "n": 118,
+      "relation": "element_symbol"
+    },
+    {
+      "ci95": [
+        1.2505505852780099,
+        1.5548560942633678
+      ],
+      "contrast": "present - absent",
+      "delta": 1.404752842450546,
+      "factor": "persistence",
+      "n": 118,
+      "relation": "element_symbol"
+    },
+    {
+      "ci95": [
+        -4.347663497613146,
+        -3.508041652978635
+      ],
+      "contrast": "stipulate - assert",
+      "delta": -3.9514235904793336,
+      "factor": "act",
+      "n": 153,
+      "relation": "country_capital"
+    },
+    {
+      "ci95": [
+        0.4914783231573167,
+        0.726141543170206
+      ],
+      "contrast": "r1 - r2",
+      "delta": 0.6154377429313909,
+      "factor": "realization",
+      "n": 153,
+      "relation": "country_capital"
+    },
+    {
+      "ci95": [
+        1.4539441626056346,
+        1.7512170115327523
+      ],
+      "contrast": "high - low",
+      "delta": 1.6032855012058433,
+      "factor": "source",
+      "n": 153,
+      "relation": "country_capital"
+    },
+    {
+      "ci95": [
+        0.13623659283507103,
+        0.36003293554767285
+      ],
+      "contrast": "present - absent",
+      "delta": 0.24586035691055597,
+      "factor": "persistence",
+      "n": 153,
+      "relation": "country_capital"
+    }
+  ],
+  "runtime": {
+    "chat": {
+      "add_generation_prompt": true,
+      "bos_token_id": null,
+      "chat_template_sha256": "e84f32a23fdda27689f868aa4a1a5621f41133e51a48d7f3efcbea2839574259",
+      "enable_thinking": false,
+      "generation_eos_token_ids": [
+        248044,
+        248046
+      ],
+      "pad_token_id": 248044,
+      "padding_side": "left",
+      "tokenizer_eos_token_id": 248046
+    },
+    "code_version": "1.0.0",
+    "config_sha256": "cf9d9d4d064f306eb0fa0b4a926a3e33047d54a83719513455202161061af270",
+    "datasets": {
+      "behavior": {
+        "path": "results/qwen36_27b_conflict/behavior_results.jsonl",
+        "sha256": "60324e6240abdcc4fafd010c4f1c7e974927045f990cfadd1729533d0c70ce4c"
+      }
+    },
+    "hardware": {
+      "cuda_available": true,
+      "cuda_version": "12.8",
+      "gpu_names": [
+        "NVIDIA H200"
+      ]
+    },
+    "model": {
+      "attention_implementation": "sdpa",
+      "class": "Qwen3_5ForCausalLM",
+      "device_map": null,
+      "dtype": "torch.bfloat16",
+      "hidden_size": 5120,
+      "id": "Qwen/Qwen3.6-27B",
+      "loaded_commit_hash": null,
+      "num_hidden_layers": 64,
+      "processor_class": "Qwen2Tokenizer",
+      "requested_revision": "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
+      "tokenizer_class": "Qwen2Tokenizer"
+    },
+    "packages": {
+      "accelerate": "1.10.1",
+      "python": "3.10.18",
+      "tokenizers": "0.22.2",
+      "torch": "2.10.0+cu128",
+      "transformers": "5.15.0"
+    }
+  },
+  "specificity_control": [
+    {
+      "ci95": [
+        -1.743833703509832,
+        -1.1348746348235568
+      ],
+      "delta": -1.442313258930788,
+      "n": 118,
+      "relation": "element_symbol"
+    },
+    {
+      "ci95": [
+        -5.817710988661823,
+        -4.956392138612037
+      ],
+      "delta": -5.389541763106203,
+      "n": 153,
+      "relation": "country_capital"
+    }
+  ]
+}

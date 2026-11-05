@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
 """E7: which PROPERTY of the claim sentence drives deference?
+
+Four properties of the claim sentence are crossed (2^4 = 16 cells per fact):
+
+    act          stipulate ("uses B as the symbol for X") vs assert ("states that ... is B")
+    realization  two verbs for the same act (r1 / r2)
+    source       a high-authority source (textbook) vs a low one (poster / brochure)
+    persistence  without vs with the hedge "consistently"
+
+plus the unattributed `bare` claim, the dataset's two original claim sentences
+(`orig_high`, `orig_low`, the claim templates of the high- and low-deference
+bundles in Gemma's E6 run; descriptive only), and a specificity control: the
+stipulate and assert sentences about a DIFFERENT subject of the same relation.
+
+Facts, false answers, screening and distractors are the E8 / E12 pipeline's, so
+E7 shares one fact set and one false-answer assignment with E8, E11, E12 and
+E13 for each model. The frame (filler, question, constraint) is E8's, so:
+
+    assert_r1_high_absent, assert_r2_high_absent,
+    stipulate_r1_high_absent, stipulate_r2_high_absent, bare
+        rebuild E8's cells of the same name byte for byte, and
+    irrelevant_assert
+        rebuilds E12's irrelevant_assert_r1 cell with no wrapper.
+
+Pass --e8-results / --e12-results to check those prompts before scoring and the
+margins after.
 """
 
 from __future__ import annotations
@@ -12,41 +37,37 @@ import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from build_conflict_awareness_dataset import RESPONSE_CONSTRAINTS, relation_specs, stable_digest
+from build_conflict_awareness_dataset import relation_specs, stable_digest
 from common import (
-    answer_matches,
-    append_jsonl,
-    cluster_bootstrap,
-    CODE_VERSION,
     finalize_jsonl,
-    generate_batch,
-    is_one_orthographic_word,
     json_safe,
     load_config,
     load_model_bundle,
-    normalize_answer,
     read_jsonl,
-    render_dataset_record,
     runtime_fingerprint,
-    score_continuations,
     seed_everything,
     write_json_atomic,
 )
+from E8_conventionality import BARE, assemble, build_facts
+from E12_delimiter import (
+    IRRELEVANT_CELL,
+    assign_distractors,
+    evaluate,
+    first_per_relation,
+    mentions,
+    screened_facts,
+    screening_records,
+)
 
 
-ANALYSIS_VERSION = "1.1.0"
+ANALYSIS_VERSION = "2.0.0"
+PREFIX = "e7"
 
 FACTORS = ("act", "realization", "source", "persistence")
 
-# The frame is the relation's E6 low endpoint, so the anchors below reproduce
-# E6 cells exactly. Indices are into the generator's own template tables.
-FRAME = {
-    "element_symbol": {"filler": 2, "question": 2, "constraint": 2},
-    "country_capital": {"filler": 1, "question": 1, "constraint": 1},
-}
-
 # Claim sentences. Written here rather than in the generator because they are a
-# new manipulation, not a new dataset. `{s}` = query subject, `{a}` = claim answer.
+# new manipulation, not a new dataset. `{s}` = subject, `{a}` = claim answer.
+# The high sources and the predicates are E8's SOURCE and PREDICATES.
 SOURCES = {
     "element_symbol": {"high": "A university chemistry textbook", "low": "A classroom wall poster"},
     "country_capital": {"high": "A national geography textbook", "low": "A tourist brochure"},
@@ -75,14 +96,22 @@ PREDICATES = {
     },
 }
 ADVERB = {"absent": "", "present": "consistently "}
-BARE = {
-    "element_symbol": "The chemical symbol for {s} is {a}.",
-    "country_capital": "The capital of {s} is {a}.",
-}
-# The original E6 claim sentences, reproduced verbatim from the generator.
+# The dataset's original claim sentences: the claim templates of the high- and
+# low-deference bundles in Gemma's E6 run. Kept as descriptive anchors.
 ORIGINAL_CLAIM_INDEX = {
     "element_symbol": {"orig_high": 1, "orig_low": 2},
     "country_capital": {"orig_high": 2, "orig_low": 1},
+}
+# E7 cells that rebuild another experiment's prompt exactly.
+E8_ANCHORS = {
+    "bare": "bare",
+    **{f"{act}_{real}_high_absent": f"{act}_{real}"
+       for act in ("stipulate", "assert") for real in ("r1", "r2")},
+}
+E12_ANCHORS = {
+    "assert_r1_high_absent": ("assert_r1", "inline"),
+    "bare": ("bare", "inline"),
+    "irrelevant_assert": (IRRELEVANT_CELL, "inline"),
 }
 
 
@@ -91,21 +120,32 @@ def parse_args() -> argparse.Namespace:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--behavior", type=Path, required=True)
-    parser.add_argument(
-        "--e6-results",
-        type=Path,
-        default=None,
-        help="decomposition_results.jsonl. Enables the anchor checks: the two "
-        "original claim cells must rebuild byte-identically and reproduce "
-        "their margins.",
-    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--relations", default="element_symbol,country_capital")
+    parser.add_argument(
+        "--false-answer-mode", choices=("reuse", "rotation", "random"), default="random"
+    )
+    parser.add_argument("--false-answer-seed", type=int, default=20260816)
+    parser.add_argument("--distractor-seed", type=int, default=20260816)
+    parser.add_argument(
+        "--e8-results",
+        type=Path,
+        default=None,
+        help="conventionality_results.jsonl from E8 (same model, --false-answer-mode "
+        "random). Enables the anchor checks against E8.",
+    )
+    parser.add_argument(
+        "--e12-results",
+        type=Path,
+        default=None,
+        help="delimiter_results.jsonl from E12 (same model). Enables the anchor "
+        "checks against E12.",
+    )
     parser.add_argument("--max-facts", type=int, default=None)
     parser.add_argument("--generation-batch-size", type=int, default=None)
     parser.add_argument("--scoring-batch-size", type=int, default=None)
     parser.add_argument("--bootstrap-replicates", type=int, default=2000)
+    parser.add_argument("--skip-screening", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--analyze-only", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
@@ -113,26 +153,12 @@ def parse_args() -> argparse.Namespace:
 
 
 # ---------------------------------------------------------------------------
-# Prompt assembly (must match build_experiment_prompt under the neutral policy)
+# Cells and records
 # ---------------------------------------------------------------------------
 
 
-def assemble(relation: str, claim: str, subject: str) -> str:
-    """context = "<claim> <filler>", then "\\n\\n", question, "\\n", constraint.
-
-    Reproduces `build_experiment_prompt` for policy_id="neutral", where the
-    policy string is empty and no policy line is emitted.
-    """
-    spec = relation_specs()[relation]
-    frame = FRAME[relation]
-    filler = spec.fillers[frame["filler"]]
-    question = spec.question_templates[frame["question"]].format(query_subject=subject)
-    constraint = RESPONSE_CONSTRAINTS[frame["constraint"]]
-    return f"{claim} {filler}\n\n{question}\n{constraint}"
-
-
 def claim_cells(relation: str) -> list[tuple[str, dict[str, str], str]]:
-    """(cell_id, factor levels, claim template) for every cell."""
+    """(cell_id, factor levels, claim template) for every relevant cell."""
     spec = relation_specs()[relation]
     cells: list[tuple[str, dict[str, str], str]] = []
     for act, realization, source, persistence in itertools.product(
@@ -143,12 +169,8 @@ def claim_cells(relation: str) -> list[tuple[str, dict[str, str], str]]:
         cells.append(
             (
                 f"{act}_{realization}_{source}_{persistence}",
-                {
-                    "act": act,
-                    "realization": realization,
-                    "source": source,
-                    "persistence": persistence,
-                },
+                {"act": act, "realization": realization,
+                 "source": source, "persistence": persistence},
                 template,
             )
         )
@@ -161,81 +183,114 @@ def claim_cells(relation: str) -> list[tuple[str, dict[str, str], str]]:
     return cells
 
 
-def build_records(
-    args: argparse.Namespace, facts: Sequence[Mapping[str, Any]]
-) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    for fact in facts:
-        relation = str(fact["relation_id"])
-        subject = str(fact["query_subject"])
-        answer = str(fact["claim_answer"])
-        for cell_id, levels, template in claim_cells(relation):
-            claim = template.format(s=subject, a=answer)
-            prompt = assemble(relation, claim, subject)
-            records.append(
-                _record(fact, cell_id, levels, prompt, claim, answer, relevant=True)
-            )
-        # Specificity control: same acts, different entity. A lift here would
-        # mean copying rather than conflict resolution.
-        distractor = fact.get("distractor_subject")
-        distractor_answer = fact.get("distractor_claim_answer")
-        if distractor and distractor_answer:
-            for act in ("stipulate", "assert"):
-                phrase = PREDICATES[relation][act]["r1"]
-                template = f"{SOURCES[relation]['high']} {phrase}."
-                claim = template.format(s=distractor, a=distractor_answer)
-                prompt = assemble(relation, claim, subject)
-                records.append(
-                    _record(
-                        fact, f"irrelevant_{act}", {"act": act}, prompt, claim,
-                        distractor_answer, relevant=False,
-                    )
-                )
-    return records
-
-
 def _record(
     fact: Mapping[str, Any],
     cell_id: str,
     levels: Mapping[str, str],
-    prompt: str,
     claim: str,
-    scored_answer: str,
+    claim_subject: str,
     relevant: bool,
 ) -> dict[str, Any]:
+    relation, subject = str(fact["relation_id"]), str(fact["query_subject"])
+    prompt = assemble(relation, claim, subject)
     return {
         "sample_id": "phr-" + stable_digest(fact["fact_id"], cell_id, prompt),
         "raw_prompt": prompt,
         "messages": [{"role": "user", "content": prompt}],
-        "semantic_positions": {"prompt_end": len(prompt)},
         "fact_id": fact["fact_id"],
-        "relation_id": fact["relation_id"],
-        "fact_split": fact["fact_split"],
+        "relation_id": relation,
         "cell_id": cell_id,
+        "wrapper": "inline",
         "levels": dict(levels),
         "claim_sentence": claim,
+        "claim_subject": claim_subject,
         "claim_is_query_relevant": relevant,
-        "context_candidate_answer": scored_answer,
+        # The paragraph's false answer is scored in every cell, the irrelevant
+        # ones included, so their margins are directly comparable.
+        "context_candidate_answer": fact["claim_answer"],
         "acceptable_world_true_answers": list(fact["acceptable_world_true_answers"]),
         "parametric_candidate_answer": fact["world_true_answer"],
     }
 
 
-def classify(record: Mapping[str, Any], text: str) -> str:
-    """Mirrors classify_generation in 02_collect_model_data.py."""
-    if not is_one_orthographic_word(text):
-        return "unparseable"
-    parametric = answer_matches(text, list(record["acceptable_world_true_answers"]))
-    contextual = normalize_answer(text) == normalize_answer(
-        record["context_candidate_answer"]
-    )
-    if parametric and contextual:
-        return "shared_parametric_and_context"
-    if parametric:
-        return "parametric"
-    if contextual:
-        return "contextual"
-    return "other"
+def build_records(facts: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for fact in facts:
+        relation = str(fact["relation_id"])
+        subject, answer = str(fact["query_subject"]), str(fact["claim_answer"])
+        for cell_id, levels, template in claim_cells(relation):
+            records.append(_record(
+                fact, cell_id, levels, template.format(s=subject, a=answer), subject, True,
+            ))
+        # Specificity control: the same sentences and the same false answer,
+        # about E12's distractor subject. A lift here is priming of the token,
+        # not conflict resolution.
+        distractor = str(fact["distractor_subject"])
+        for act in ("stipulate", "assert"):
+            template = f"{SOURCES[relation]['high']} {PREDICATES[relation][act]['r1']}."
+            claim = template.format(s=distractor, a=answer)
+            if any(mentions(claim, str(t)) for t in fact["acceptable_world_true_answers"]):
+                raise ValueError(f"{fact['fact_id']}: {claim!r} names the true answer")
+            records.append(_record(
+                fact, f"irrelevant_{act}", {"act": act}, claim, distractor, False,
+            ))
+    return records
+
+
+# ---------------------------------------------------------------------------
+# Anchors
+# ---------------------------------------------------------------------------
+
+
+def load_anchors(e8_path: Path | None, e12_path: Path | None) -> dict[str, dict[tuple[str, str], Mapping[str, Any]]]:
+    """source -> (fact_id, E7 cell) -> the other experiment's scored row."""
+    anchors: dict[str, dict[tuple[str, str], Mapping[str, Any]]] = {}
+    if e8_path is not None:
+        inverse = {v: k for k, v in E8_ANCHORS.items()}
+        anchors["E8"] = {
+            (str(r["fact_id"]), inverse[str(r["cell_id"])]): r
+            for r in read_jsonl(e8_path)
+            if str(r["cell_id"]) in inverse and str(r.get("policy_id", "neutral")) == "neutral"
+        }
+    if e12_path is not None:
+        inverse = {v: k for k, v in E12_ANCHORS.items()}
+        anchors["E12"] = {
+            (str(r["fact_id"]), inverse[(str(r["cell_id"]), str(r["wrapper"]))]): r
+            for r in read_jsonl(e12_path)
+            if (str(r["cell_id"]), str(r["wrapper"])) in inverse
+        }
+    return anchors
+
+
+def check_anchor_prompts(
+    records: Sequence[Mapping[str, Any]],
+    anchors: Mapping[str, Mapping[tuple[str, str], Mapping[str, Any]]],
+) -> None:
+    """Every anchored prompt must be byte-identical to the other experiment's."""
+    for name, table in anchors.items():
+        checked = mismatched = 0
+        for record in records:
+            other = table.get((str(record["fact_id"]), str(record["cell_id"])))
+            if other is None:
+                continue
+            checked += 1
+            if other["raw_prompt"] != record["raw_prompt"]:
+                mismatched += 1
+                if mismatched <= 2:
+                    print(f"\nANCHOR MISMATCH ({record['cell_id']} vs {name})")
+                    print(f"  {name}: {other['raw_prompt']!r}")
+                    print(f"  E7 : {record['raw_prompt']!r}")
+        print(f"anchor prompts vs {name}: {checked - mismatched}/{checked} identical")
+        if checked == 0:
+            raise RuntimeError(
+                f"No anchored prompts shared with {name}: is it the same model, "
+                "--false-answer-mode random, and the same seeds?"
+            )
+        if mismatched:
+            raise RuntimeError(
+                f"Anchor prompts differ from {name}. The facts, false answers or "
+                "frame have drifted; the experiments would no longer be comparable."
+            )
 
 
 def paired_mean_delta(
@@ -253,6 +308,8 @@ def paired_mean_delta(
     """
     import numpy as np
 
+    from paired_stats import bootstrap_mean_ci
+
     usable, deltas = [], []
     for fact in facts:
         a = [values[(fact, c)] for c in cells_a if (fact, c) in values]
@@ -264,10 +321,13 @@ def paired_mean_delta(
     if not usable:
         return {"delta": float("nan"), "ci95": [float("nan"), float("nan")], "n": 0}
     array = np.asarray(deltas)
-    low, high = cluster_bootstrap(
-        usable, lambda picked: float(np.mean(array[picked])), replicates, seed
-    )
+    low, high = bootstrap_mean_ci(array, replicates, seed)
     return {"delta": float(array.mean()), "ci95": [low, high], "n": len(usable)}
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 
 def main() -> None:
@@ -291,104 +351,41 @@ def main() -> None:
 
     config = load_config(args.config)
     relations = [r.strip() for r in args.relations.split(",") if r.strip()]
-    behaviour = read_jsonl(args.behavior)
+    for relation in relations:
+        if relation not in SOURCES:
+            raise ValueError(f"Unknown relation {relation!r}; expected {sorted(SOURCES)}")
 
-    # Facts, false answers and distractors all come from the run we are extending.
-    distractor_by_fact: dict[str, tuple[str, str]] = {}
-    for row in behaviour:
-        if str(row["condition_id"]) == "false_irrelevant" and str(row["policy_id"]) == "neutral":
-            distractor_by_fact[str(row["fact_id"])] = (
-                str(row["claim_subject"]),
-                str(row["claim_answer"]),
-            )
-    facts: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    per_relation: collections.Counter = collections.Counter()
-    for row in behaviour:
-        if (
-            str(row["condition_id"]) != "false_relevant"
-            or str(row["policy_id"]) != "neutral"
-            or str(row["relation_id"]) not in relations
-            or str(row["fact_id"]) in seen
-        ):
-            continue
-        relation = str(row["relation_id"])
-        if args.max_facts is not None and per_relation[relation] >= args.max_facts:
-            continue
-        seen.add(str(row["fact_id"]))
-        per_relation[relation] += 1
-        distractor = distractor_by_fact.get(str(row["fact_id"]), (None, None))
-        facts.append(
-            {
-                "fact_id": row["fact_id"],
-                "relation_id": relation,
-                "fact_split": row["fact_split"],
-                "query_subject": row["query_subject"],
-                "claim_answer": row["claim_answer"],
-                "world_true_answer": row["world_true_answer"],
-                "acceptable_world_true_answers": row["acceptable_world_true_answers"],
-                "distractor_subject": distractor[0],
-                "distractor_claim_answer": distractor[1],
-            }
-        )
-    if not facts:
-        raise ValueError("No facts matched; check --relations and the behaviour file")
-    print(f"facts: {dict(per_relation)}")
+    # The same facts, false answers and distractors as E12: assigned over the
+    # full relation, then truncated, then screened.
+    facts = assign_distractors(
+        build_facts(relations, None, None,
+                    mode=args.false_answer_mode, seed=args.false_answer_seed),
+        args.distractor_seed,
+    )
+    facts = first_per_relation(facts, args.max_facts)
+    print(f"model: {config['model']['id']}")
+    print(f"facts before screening: {dict(collections.Counter(f['relation_id'] for f in facts))}"
+          f"   mode {args.false_answer_mode}")
 
-    records = build_records(args, facts)
+    anchors = load_anchors(args.e8_results, args.e12_results)
+    records = build_records(facts)
     print(f"cells/fact: {len(records) / len(facts):.1f}   prompts: {len(records)}")
-
-    # ---- anchor check: the two original claims must rebuild exactly ---------
-    e6_rows = read_jsonl(args.e6_results) if args.e6_results else []
-    e6_prompt = {
-        (str(r["fact_id"]), str(r["cell_id"])): str(r["raw_prompt"])
-        for r in e6_rows
-        if str(r["policy_id"]) == "neutral"
-    }
-    e6_margin = {
-        (str(r["fact_id"]), str(r["cell_id"])): float(
-            r["context_minus_parametric_logprob_margin"]
-        )
-        for r in e6_rows
-        if str(r["policy_id"]) == "neutral"
-    }
-    anchor_to_e6 = {"orig_low": "endpoint_low", "orig_high": "low_plus_claim"}
-    checked = mismatched = 0
-    for record in records:
-        e6_cell = anchor_to_e6.get(str(record["cell_id"]))
-        if e6_cell is None:
-            continue
-        expected = e6_prompt.get((str(record["fact_id"]), e6_cell))
-        if expected is None:
-            continue
-        checked += 1
-        if expected != record["raw_prompt"]:
-            mismatched += 1
-            if mismatched <= 2:
-                print(f"\nANCHOR MISMATCH ({record['cell_id']} vs E6 {e6_cell})")
-                print(f"  E6 : {expected!r}")
-                print(f"  E7 : {record['raw_prompt']!r}")
-    if checked:
-        print(f"anchor prompts: {checked - mismatched}/{checked} identical to E6")
-        if mismatched:
-            raise RuntimeError(
-                "Anchor prompts differ from E6. The frame or assembly has drifted; "
-                "the anchors would no longer be comparable."
-            )
+    if anchors:
+        check_anchor_prompts(records, anchors)
     else:
-        print("anchor prompts: SKIPPED (pass --e6-results to enable)")
+        print("anchor prompts: SKIPPED (pass --e8-results / --e12-results to enable)")
 
     if args.validate_only:
         for relation in relations:
             example = next(f for f in facts if f["relation_id"] == relation)
-            print(f"\n{'=' * 78}\n{relation}: all claim sentences for {example['query_subject']}\n{'=' * 78}")
+            print(f"\n{'=' * 78}\n{relation}: all claim sentences for "
+                  f"{example['query_subject']}\n{'=' * 78}")
             for record in records:
-                if record["fact_id"] != example["fact_id"]:
-                    continue
-                print(f"  [{record['cell_id']:34s}] {record['claim_sentence']}")
+                if record["fact_id"] == example["fact_id"]:
+                    print(f"  [{record['cell_id']:34s}] {record['claim_sentence']}")
             print("\n  full prompt for one cell:\n")
             print(next(r["raw_prompt"] for r in records if r["fact_id"] == example["fact_id"]))
-        print(f"\nvalidate-only: {len(records)} prompts would be evaluated")
+        print(f"\nvalidate-only: {len(facts)} screening + {len(records)} experimental prompts")
         return
 
     # ---- run ---------------------------------------------------------------
@@ -406,12 +403,13 @@ def main() -> None:
             print(f"resuming: {len(done)} prompts already scored")
         elif partial_path.exists():
             partial_path.unlink()
-        pending = [r for r in records if r["sample_id"] not in done]
 
         bundle = load_model_bundle(config)
-        dataset_files: dict[str, Any] = {"behavior": args.behavior}
-        if args.e6_results:
-            dataset_files["e6_results"] = args.e6_results
+        dataset_files: dict[str, Any] = {}
+        if args.e8_results:
+            dataset_files["e8_results"] = args.e8_results
+        if args.e12_results:
+            dataset_files["e12_results"] = args.e12_results
         fingerprint = runtime_fingerprint(config, bundle, dataset_files)
         generation_batch = args.generation_batch_size or int(
             config["collection"]["generation_batch_size"]
@@ -419,94 +417,37 @@ def main() -> None:
         scoring_batch = args.scoring_batch_size or int(
             config["collection"]["scoring_batch_size"]
         )
-        max_input = int(config["chat"]["max_input_tokens"])
 
-        # Duplicates E6's loop rather than importing it; E6 has already run
-        # end to end and a refactor here costs a 12B model load per failure.
-        for start in range(0, len(pending), generation_batch):
-            chunk = pending[start : start + generation_batch]
-            rendered = [render_dataset_record(bundle.processor, r, config) for r in chunk]
-            texts = [r.rendered_text for r in rendered]
-            generations = generate_batch(bundle.model, bundle.tokenizer, texts, config)
+        if not args.skip_screening:
+            print("\nscreening (context-free)")
+            screen = [r for r in screening_records(facts, prefix=PREFIX)
+                      if r["sample_id"] not in done]
+            evaluate(screen, bundle, config, partial_path, generation_batch,
+                     scoring_batch, started, analysis_version=ANALYSIS_VERSION)
+            kept = screened_facts(facts, read_jsonl(partial_path), prefix=PREFIX)
+            print(f"  kept {len(kept)}/{len(facts)} facts")
+            facts = list(kept)
+            if not facts:
+                raise RuntimeError("No facts survived screening")
 
-            requests: list[dict[str, str]] = []
-            for index, record in enumerate(chunk):
-                requests.append(
-                    {
-                        "key": f"{index}|context",
-                        "rendered_text": texts[index],
-                        "continuation": str(record["context_candidate_answer"]),
-                    }
-                )
-                for alias, answer in enumerate(record["acceptable_world_true_answers"]):
-                    requests.append(
-                        {
-                            "key": f"{index}|parametric|{alias}",
-                            "rendered_text": texts[index],
-                            "continuation": str(answer),
-                        }
-                    )
-            scores = score_continuations(
-                bundle.model, bundle.tokenizer, requests, scoring_batch, max_input
-            )
-            by_key = {s.key: s for s in scores}
-
-            output = []
-            for index, record in enumerate(chunk):
-                context_score = by_key[f"{index}|context"]
-                best = max(
-                    (
-                        by_key[f"{index}|parametric|{alias}"]
-                        for alias in range(len(record["acceptable_world_true_answers"]))
-                    ),
-                    key=lambda s: s.sum_logprob,
-                )
-                generation = generations[index]
-                text = generation["text"]
-                # See the note in E6: classify the stripped answer so these
-                # rates are comparable to E8 and later.
-                answer = str(generation.get("answer_text") or text)
-                output.append(
-                    {
-                        "code_version": CODE_VERSION,
-                        "analysis_version": ANALYSIS_VERSION,
-                        **{
-                            k: record[k]
-                            for k in (
-                                "sample_id", "fact_id", "relation_id", "fact_split",
-                                "cell_id", "levels", "claim_sentence",
-                                "claim_is_query_relevant", "raw_prompt",
-                            )
-                        },
-                        "generated_answer": text,
-                        "generated_answer_stripped": answer,
-                        "had_reasoning_preamble": bool(
-                            generation.get("had_reasoning_preamble", False)
-                        ),
-                        "format_compliant": is_one_orthographic_word(text),
-                        "observed_knowledge_source": classify(record, answer),
-                        "context_answer": record["context_candidate_answer"],
-                        "parametric_answer": best.continuation,
-                        "context_answer_sequence_logprob": context_score.sum_logprob,
-                        "parametric_answer_sequence_logprob": best.sum_logprob,
-                        "context_minus_parametric_logprob_margin": (
-                            context_score.sum_logprob - best.sum_logprob
-                        ),
-                    }
-                )
-            append_jsonl(partial_path, output)
-            if (start // generation_batch) % 20 == 0:
-                print(f"  {start + len(chunk)}/{len(pending)} ({time.time() - started:7.1f}s)")
-
+        pending = [r for r in build_records(facts) if r["sample_id"] not in done]
+        print(f"\nscoring {len(pending)} experimental prompts")
+        evaluate(pending, bundle, config, partial_path, generation_batch,
+                 scoring_batch, started, carry=("levels",),
+                 analysis_version=ANALYSIS_VERSION)
         rows = read_jsonl(partial_path)
         finalize_jsonl(partial_path, results_path)
         print(f"\nscored {len(rows)} prompts")
 
     # ---- analysis ----------------------------------------------------------
+    rows = [r for r in rows if r["cell_id"] != "screen"]
+    n_facts = len({str(r["fact_id"]) for r in rows})
     report: dict[str, Any] = {
         "analysis_version": ANALYSIS_VERSION,
         "runtime": fingerprint,
-        "frame": FRAME,
+        "false_answer_mode": args.false_answer_mode,
+        "false_answer_seed": args.false_answer_seed,
+        "distractor_seed": args.distractor_seed,
         "factors": list(FACTORS),
     }
     relevant = [r for r in rows if r.get("claim_is_query_relevant", True)]
@@ -519,32 +460,38 @@ def main() -> None:
     seed = int(config["project"]["seed"])
 
     print("\n" + "=" * 78)
-    print("A0  anchor reproduction against E6")
+    print("A0  anchor reproduction against E8 / E12 (byte-identical prompts)")
     print("=" * 78)
-    anchors: list[dict[str, Any]] = []
-    for relation in relations:
-        for anchor, e6_cell in anchor_to_e6.items():
-            deltas = [
-                margins[(str(r["fact_id"]), anchor)] - e6_margin[(str(r["fact_id"]), e6_cell)]
-                for r in relevant
-                if r["relation_id"] == relation
-                and r["cell_id"] == anchor
-                and (str(r["fact_id"]), e6_cell) in e6_margin
-            ]
-            if not deltas:
-                continue
-            entry = {
-                "relation": relation, "anchor": anchor, "e6_cell": e6_cell,
-                "mean_abs_delta": float(np.mean(np.abs(deltas))),
-                "max_abs_delta": float(np.max(np.abs(deltas))), "n": len(deltas),
-            }
-            anchors.append(entry)
-            print(
-                f"  {relation:17s} {anchor:10s} vs E6 {e6_cell:16s} "
-                f"mean|d|={entry['mean_abs_delta']:6.3f} max|d|={entry['max_abs_delta']:7.3f}"
-            )
-    report["anchor_reproduction"] = anchors
-    print("  (the BF16 batch-width floor in this pipeline is ~0.4 mean, ~3.7 max)")
+    anchor_report: list[dict[str, Any]] = []
+    all_margins = {
+        (str(r["fact_id"]), str(r["cell_id"])): float(r["context_minus_parametric_logprob_margin"])
+        for r in rows
+    }
+    for name, table in anchors.items():
+        for relation in relations:
+            for e7_cell in (E8_ANCHORS if name == "E8" else E12_ANCHORS):
+                deltas = [
+                    all_margins[(fact, cell)] - float(other["context_minus_parametric_logprob_margin"])
+                    for (fact, cell), other in table.items()
+                    if cell == e7_cell and (fact, cell) in all_margins
+                    and fact.split(":", 1)[0] == relation
+                ]
+                if not deltas:
+                    continue
+                entry = {
+                    "source": name, "relation": relation, "cell": e7_cell, "n": len(deltas),
+                    "mean_delta": float(np.mean(deltas)),
+                    "mean_abs_delta": float(np.mean(np.abs(deltas))),
+                    "max_abs_delta": float(np.max(np.abs(deltas))),
+                }
+                anchor_report.append(entry)
+                print(f"  {name:4s} {relation:17s} {e7_cell:26s} n={entry['n']:3d} "
+                      f"mean d={entry['mean_delta']:+6.3f}  mean|d|={entry['mean_abs_delta']:6.3f}  "
+                      f"max|d|={entry['max_abs_delta']:6.3f}")
+    if not anchors:
+        print("  skipped (no --e8-results / --e12-results)")
+    report["anchor_reproduction"] = anchor_report
+    print("  (BF16 batch composition alone moves single rows by up to a few logits)")
 
     print("\n" + "=" * 78)
     print("A1  main effect of each claim property (margin, logits)")
@@ -583,7 +530,7 @@ def main() -> None:
     report["main_effects"] = effects
 
     print("\n" + "=" * 78)
-    print("A2  specificity control: claim about a DIFFERENT entity")
+    print("A2  specificity control: the same sentences about a DIFFERENT subject")
     print("    A phrasing effect here would mean copying, not conflict resolution.")
     print("=" * 78)
     control: list[dict[str, Any]] = []
@@ -623,6 +570,9 @@ def main() -> None:
                 "context_rate": counts.get("contextual", 0) / n,
                 "parametric_rate": counts.get("parametric", 0) / n,
                 "other_rate": (counts.get("other", 0) + counts.get("unparseable", 0)) / n,
+                "margin_positive_rate": float(np.mean(
+                    [r["context_minus_parametric_logprob_margin"] > 0 for r in subset]
+                )),
                 "mean_margin": float(
                     np.mean([r["context_minus_parametric_logprob_margin"] for r in subset])
                 ),
@@ -638,11 +588,21 @@ def main() -> None:
 
     lines = ["# E7: which property of the claim sentence drives deference?\n"]
     lines.append(
-        f"{len(rows)} prompts, {len(facts)} facts, neutral policy. Subject, false "
-        "answer, filler, question and response constraint are held fixed at each "
-        "relation's E6 low-endpoint frame; only the claim sentence varies.\n"
+        f"{len(rows)} prompts, {n_facts} facts, neutral policy. Facts, false answers, "
+        "screening and distractors are the E8 / E12 pipeline's; the frame (filler, "
+        "question, constraint) is E8's. Only the claim sentence varies.\n"
     )
-    lines.append("## Main effects (margin, logits)\n")
+    if anchor_report:
+        lines.append("## Anchor reproduction (byte-identical prompts)\n")
+        lines.append("| Source | Relation | E7 cell | n | mean d | mean abs d | max abs d |")
+        lines.append("|---|---|---|---:|---:|---:|---:|")
+        for entry in anchor_report:
+            lines.append(
+                f"| {entry['source']} | {entry['relation']} | `{entry['cell']}` | {entry['n']} | "
+                f"{entry['mean_delta']:+.3f} | {entry['mean_abs_delta']:.3f} | "
+                f"{entry['max_abs_delta']:.3f} |"
+            )
+    lines.append("\n## Main effects (margin, logits)\n")
     lines.append("| Relation | Factor | Contrast | Delta | 95% CI | n |")
     lines.append("|---|---|---|---:|---:|---:|")
     for entry in effects:
@@ -652,13 +612,14 @@ def main() -> None:
             f"{entry['delta']:.2f} | [{low:+.2f}, {high:+.2f}] | {entry['n']} |"
         )
     lines.append("\n## Behaviour per cell\n")
-    lines.append("| Relation | Cell | n | Context | Parametric | Other | Mean margin |")
-    lines.append("|---|---|---:|---:|---:|---:|---:|")
+    lines.append("| Relation | Cell | n | Context | Parametric | Other | M > 0 | Mean margin |")
+    lines.append("|---|---|---:|---:|---:|---:|---:|---:|")
     for entry in cell_summary:
         lines.append(
             f"| {entry['relation']} | `{entry['cell']}` | {entry['n']} | "
             f"{100 * entry['context_rate']:.1f}% | {100 * entry['parametric_rate']:.1f}% | "
-            f"{100 * entry['other_rate']:.1f}% | {entry['mean_margin']:.2f} |"
+            f"{100 * entry['other_rate']:.1f}% | {100 * entry['margin_positive_rate']:.1f}% | "
+            f"{entry['mean_margin']:.2f} |"
         )
     lines.append("\n## How to read this\n")
     lines.append(
@@ -672,15 +633,19 @@ def main() -> None:
         "the result is lexical and the pragmatic reading is wrong. Report this "
         "number next to `act`, never on its own.\n"
         "- **`source` and `persistence`** are the two obvious alternative "
-        "explanations for E6's endpoint gap. If either rivals `act`, say so.\n"
+        "explanations. If either rivals `act`, say so.\n"
         "- **`bare`** shows where an unattributed assertion sits. If it lands "
         "near the assert cells, attribution is not what matters; if it is far "
         "from both, the whole effect depends on there being a source at all.\n"
-        "- **A2 must be near zero.** A phrasing that lifts the claim answer even "
-        "when the claim is about another entity is a salience effect, and the "
+        "- **A2 must be near zero.** A phrasing that lifts the false answer even "
+        "when the claim is about another subject is a salience effect, and the "
         "conflict-resolution reading would be wrong.\n"
-        "- Anchors are the E6 cells rebuilt here. If they do not reproduce, "
-        "nothing above is comparable to E6 and the frame has drifted.\n"
+        "- **Anchors** are cells whose prompts are byte-identical to E8's and "
+        "E12's. If their margins do not reproduce within batch noise, nothing "
+        "here is comparable to those experiments.\n"
+        "- `Other` counts answers that are neither the true nor the paragraph's "
+        "(including Gemma's thought-channel residue); `M > 0` is the "
+        "residue-free paragraph rate.\n"
     )
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"\nwrote {args.out / 'phrasing_summary.json'}")

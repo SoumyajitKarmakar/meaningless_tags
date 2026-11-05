@@ -124,7 +124,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--permutations", type=int, default=ps.DEFAULT_PERMUTATIONS)
     parser.add_argument("--seed", type=int, default=ps.DEFAULT_SEED)
     parser.add_argument("--conventionality-dir", default="conventionality_random")
-    parser.add_argument("--phrasing-dir", default="phrasing")
+    parser.add_argument("--phrasing-dir", default="phrasing_v2")
     parser.add_argument("--delimiter-dir", default="delimiter_v2")
     parser.add_argument("--channel-dir", default="channel_v2")
     parser.add_argument("--nonsense-dir", default="nonsense_strings")
