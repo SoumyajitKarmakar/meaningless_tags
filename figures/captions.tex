@@ -1,0 +1,39 @@
+% Copy each caption into the matching figure environment.
+% PDF exports are tightly cropped. Use width=\textwidth in a figure* environment.
+
+% fig1_wrapper_effects.pdf
+\caption{Wrapper effects for attributed false assertions. Points show the mean
+change in answer margin from the same paragraph without a wrapper. Bars show
+95\% paired bootstrap confidence intervals over facts. A positive change means
+greater relative preference for the assigned false answer. Each tag is next to
+its colon-label form. The two models use different horizontal scales. Within
+each model, both datasets use the same scale.}
+\label{fig:wrapper-effects}
+
+% fig2_name_gaps.pdf
+\caption{Tag-versus-colon differences across names. Each coloured point is one
+name's mean answer margin under tags minus its mean margin under a colon label.
+Positive values mean greater relative preference for the false answer under
+tags. Each panel shows 30 random names and the six tested meaningful names.
+Black diamonds show group means. Horizontal intervals show the reported
+95\% crossed bootstrap confidence intervals over names and facts for the
+random-name means. No group-level interval is shown for the six meaningful
+names. Vertical offsets separate overlapping points and have no numeric
+meaning. The two models use different horizontal scales.}
+\label{fig:name-gaps}
+
+% fig3_instruction_guards.pdf
+\caption{Warnings against an embedded instruction inside a
+\texttt{<document>} wrapper. Cells show the percentage of outputs matching the
+assigned false answer. The no-warning rate is 100\% in all four panels.
+Each warning text is placed in the system prompt, above the block in the user
+turn, or below the block in the user turn. All panels use the same colour scale.}
+\label{fig:instruction-guards}
+
+% appendix_assertion_guards.pdf
+\caption{Warnings against an attributed false assertion inside a
+\texttt{<document>} wrapper. Cells show the percentage of outputs matching the
+assigned false answer. The no-warning row is repeated across columns for
+reference. All panels use the same colour scale as
+Figure~\ref{fig:instruction-guards}.}
+\label{fig:assertion-guards}
