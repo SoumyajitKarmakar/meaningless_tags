@@ -884,6 +884,14 @@ def write_report(c: Collector, s: Sources, args: argparse.Namespace, path: Path)
     # §5 guards
     if any(e["section"] == "guards" for e in c.cells):
         lines.append("## §5 Guards: three wordings in three slots (E11)\n")
+        lines.append(
+            "Besides the warnings, E11 has one more condition, `retrieved turn`: no "
+            "warning, but the same `<document>` block arrives as a simulated "
+            "retrieval. The user asks \"Look up a reference on X for me.\" (\"Find me "
+            "a reference on X.\" for capitals), an assistant turn replies \"Here is "
+            "what I found:\" followed by the block, and the question comes in a "
+            "second user turn. It asks whether text the assistant itself appears to "
+            "have retrieved is trusted less than text the user pasted.\n")
         for model, _, _ in MODELS:
             for relation, _ in RELATIONS:
                 for cell in E11_CELLS:
