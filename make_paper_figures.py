@@ -331,7 +331,8 @@ def plot_wrappers(data: dict, out: Path, dpi: int) -> None:
              ha="center", fontsize=8)
     handles = [Line2D([], [], marker="o", ls="", color=colour, markersize=4, label=label)
                for colour, label in (
-                   (BLUE, "Content / trust labels"), (GREEN, "Distrust labels"),
+                #    (BLUE, "Content / trust labels"), (GREEN, "Distrust labels"),
+                   (BLUE, "Content / trust names"), (GREEN, "Distrust names"),
                    (ORANGE, "Arbitrary names"), (GREY, "Other delimiters"))]
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.0),
                ncol=4, frameon=False, fontsize=7, handletextpad=0.3, borderaxespad=0,

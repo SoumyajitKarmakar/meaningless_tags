@@ -264,7 +264,12 @@ PY
 # ===========================================================================
 
 python make_tables.py  --results results --out results/stats
-python make_figures.py --results results --out figures
+
+# python make_figures.py --results results --out figures
+python make_paper_figures.py \
+  --report results/stats/stats_report.md \
+  --results results \
+  --out figures
 
 # make_tables writes results/stats/stats_report.md (every table, in paper
 # order, Holm-adjusted p within each family) plus the CSVs and JSON behind it.
