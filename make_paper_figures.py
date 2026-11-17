@@ -413,7 +413,8 @@ def plot_names(data: dict, out: Path, dpi: int) -> None:
                 # The fixed set has no group-level crossed CI in the reports.
                 ax.plot(float(np.mean(values)), summary_y, "D", color=INK,
                         markersize=3.4, zorder=4)
-    fig.text(0.57, 0.073, r"Mean margin gap $M_{\mathrm{tag}}-M_{\mathrm{colon}}$",
+    # fig.text(0.57, 0.073, r"Mean margin gap $M_{\mathrm{tag}}-M_{\mathrm{colon}}$",
+    fig.text(0.57, 0.073, r"Mean margin gap $M_{\mathrm{tag}}-M_{\mathrm{label}}$",
              ha="center", fontsize=8)
     handles = [Line2D([], [], marker="o", ls="", color=GREY, ms=4, label="One name"),
                Line2D([], [], marker="D", ls="", color=INK, ms=3.4, label="Group mean"),
