@@ -9,6 +9,7 @@ Or use your result tree:
 Outputs (vector PDF and 300-dpi PNG):
   fig1_wrapper_effects       All 20 wrappers, attributed assertion, paired CIs.
   fig2_name_gaps             30 random names and six meaningful names per panel.
+  fig3_warning_share         Share of the tag effect left by each warning (single column).
   fig3_instruction_guards    Three warning wordings x three positions.
   appendix_assertion_guards The corresponding false-assertion results.
 
@@ -18,10 +19,7 @@ No model calls, new tests, or reconstructed confidence intervals are involved.
 The E13 reports contain the per-name gaps, so the raw JSONL files are not needed.
 """
 
-# python make_paper_figures.py \
-#   --report results/stats/stats_report.md \
-#   --results results \
-#   --out figures
+# python make_paper_figures.py --report results/stats/stats_report.md --results results --out figures
 
 from __future__ import annotations
 
@@ -37,6 +35,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
+from matplotlib.transforms import blended_transform_factory
 from matplotlib.ticker import MaxNLocator
 
 
@@ -48,6 +47,10 @@ RELATION_IDS = {"elements": "element_symbol", "capitals": "country_capital"}
 PANELS = tuple((model, relation) for model in MODELS for relation in RELATIONS)
 POSITIONS = ("system prompt", "user, above", "user, below")
 WARNINGS = ("falsehood", "instruction", "combined")
+# Row labels for the warning figure, and the slot names used in the contrast tables.
+POSITION_LABELS = {"system prompt": "System", "user, above": "Above", "user, below": "Below"}
+CONTRAST_SLOTS = {"system prompt": "system prompt", "user, above": "user turn above",
+                  "user, below": "user turn below"}
 
 # Adjacent tag/label pairs, in the same order in all four panels.
 WRAPPERS = (
@@ -265,6 +268,32 @@ def load_names(report: Path, name_reports: dict[str, Path]) -> dict:
     return result
 
 
+def load_warning_shares(path: Path) -> dict:
+    """Share of the tag effect that each warning leaves, for the attributed claim.
+
+    share = 1 + (M_warning - M_tags) / (M_tags - M_none), where M_tags is the
+    <document> paragraph without a warning and M_none the unwrapped paragraph.
+    Both differences are the report's paired mean margin changes, so no rounded
+    margins are subtracted. No interval is computed for the ratio.
+    """
+    tables = read_tables(path)
+    shares = {}
+    for model, relation in PANELS:
+        group = f"{model} · {relation} · assert_r1"
+        table = select_table(tables, "§5 Guards", group, "Contrast (A - B)")
+        rows = index_rows(table, "Contrast (A - B)")
+        tag_effect, low, _ = estimate(rows["<document>, no warning - no wrapper"]["ΔM"])
+        if low <= 0:
+            raise ValueError(f"The tag effect's interval reaches zero for {group}; "
+                             "a share of it is not meaningful.")
+        for wording in WARNINGS:
+            for position in POSITIONS:
+                key = f"{wording} guard, {CONTRAST_SLOTS[position]} - <document>, no warning"
+                change = estimate(rows[key]["ΔM"])[0]
+                shares[model, relation, wording, position] = 1 + change / tag_effect
+    return shares
+
+
 def configure_style() -> None:
     plt.rcParams.update({
         "font.family": "DejaVu Sans",
@@ -469,6 +498,63 @@ def plot_guards(data: dict, cell: str, out: Path, dpi: int) -> None:
     save(fig, out, name, dpi)
 
 
+def plot_warning_share(shares: dict, out: Path, dpi: int) -> None:
+    """Single-column dot plot of the tag effect left by each warning and position."""
+    group_step, first_row = 4.3, 1.0
+    rows = {(wording, position): g * group_step + first_row + i
+            for g, wording in enumerate(WARNINGS) for i, position in enumerate(POSITIONS)}
+    # Elements above, capitals below the row line, so equal values stay visible.
+    marks = {"elements": ("o", BLUE, 3.4, -0.2), "capitals": ("s", ORANGE, 3.0, 0.2)}
+    fig, axes = plt.subplots(1, 2, figsize=(3.3, 2.42), sharey=True)
+    fig.subplots_adjust(left=0.20, right=0.985, top=0.92, bottom=0.25, wspace=0.13)
+    for ax, model in zip(axes, MODELS):
+        for wording in WARNINGS:
+            top = rows[wording, POSITIONS[0]] - 0.55
+            bottom = rows[wording, POSITIONS[-1]] + 0.55
+            ax.vlines((-1, -0.5, 0.5), top, bottom, color=GRID, lw=0.55, zorder=0)
+            ax.vlines(0, top, bottom, color="#777777", lw=0.8, zorder=1)
+            ax.vlines(1, top, bottom, color="#777777", lw=0.8,
+                      linestyles=(0, (2.5, 1.5)), zorder=1)
+            for position in POSITIONS:
+                for relation, (marker, colour, size, offset) in marks.items():
+                    ax.plot(shares[model, relation, wording, position],
+                            rows[wording, position] + offset, marker=marker, ls="none",
+                            color=colour, ms=size, mew=0, zorder=3)
+        ax.set_xlim(-1.3, 1.3)
+        ax.set_ylim(max(rows.values()) + 0.75, -0.6)
+        ax.set_xticks((-1, 0, 1), labels=("\u2212100%", "0%", "100%"))
+        ax.set_yticks(())
+        ax.tick_params(axis="x", length=0, labelsize=7, pad=2)
+        ax.set_title(model, fontsize=8, pad=3)
+    # Row labels: x in figure units, y in data units of the left panel.
+    label = blended_transform_factory(fig.transFigure, axes[0].transData)
+    for g, wording in enumerate(WARNINGS):
+        fig.text(0.0, g * group_step, f"{wording.capitalize()} warning", transform=label,
+                 ha="left", va="center", fontsize=7, fontweight="bold")
+        for position in POSITIONS:
+            fig.text(0.035, rows[wording, position], POSITION_LABELS[position],
+                     transform=label, ha="left", va="center", fontsize=7)
+    center = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2
+    fig.text(center, 0.142, "Share of the tag effect remaining", ha="center", fontsize=8)
+    fig.text(center, 0.09, "0% = no wrapper; 100% = tags, no warning",
+             ha="center", fontsize=6.5, color="#555555")
+    handles = [Line2D([], [], marker=marker, ls="", color=colour, ms=size + 0.4,
+                      label=relation.capitalize())
+               for relation, (marker, colour, size, _) in marks.items()]
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(center, 0.005),
+               ncol=2, frameon=False, fontsize=7, handletextpad=0.3, borderaxespad=0,
+               columnspacing=1.2)
+    save(fig, out, "fig3_warning_share", dpi)
+
+
+def write_share_values(shares: dict, out: Path) -> None:
+    with (out / "warning_share_values.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(("model", "relation", "warning", "position", "share_of_tag_effect"))
+        for key, value in shares.items():
+            writer.writerow((*key, f"{value:.4f}"))
+
+
 def write_values(wrappers: dict, guards: dict, out: Path) -> None:
     with (out / "wrapper_values.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
@@ -533,6 +619,15 @@ names. Vertical offsets separate overlapping points and have no numeric
 meaning. The two models use different horizontal scales.}
 \label{fig:name-gaps}
 
+% fig3_warning_share.pdf (single column: width=\columnwidth in a figure environment)
+\caption{How much of the tag effect is left with each warning, for the attributed
+claim inside \texttt{<document>} tags. The share is the change in mean margin from
+the unwrapped paragraph with the warning, divided by the same change without one.
+At 100\% the warning changed nothing; at 0\% the margin is back at its level for
+the unwrapped paragraph. The warning is in the system message or in the user turn,
+above or below the paragraph. Follow rates are in Table~\ref{tab:warnings}.}
+\label{fig:warning-share}
+
 % fig3_instruction_guards.pdf
 \caption{Warnings against an embedded instruction inside a
 \texttt{<document>} wrapper. Cells show the percentage of outputs matching the
@@ -582,16 +677,19 @@ def main() -> None:
     try:
         wrappers, guards = load_data(args.report)
         names = load_names(args.report, name_reports)
+        shares = load_warning_shares(args.report)
     except (OSError, ValueError, KeyError) as exc:
         parser.error(str(exc))
     args.out.mkdir(parents=True, exist_ok=True)
     configure_style()
     plot_wrappers(wrappers, args.out, args.dpi)
     plot_names(names, args.out, args.dpi)
+    plot_warning_share(shares, args.out, args.dpi)
     plot_guards(guards, "explicit_stipulation", args.out, args.dpi)
     plot_guards(guards, "assert_r1", args.out, args.dpi)
     write_values(wrappers, guards, args.out)
     write_name_values(names, args.out)
+    write_share_values(shares, args.out)
     (args.out / "captions.tex").write_text(CAPTIONS, encoding="utf-8")
     print("All three main figures and the appendix warning figure are ready.")
 
